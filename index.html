@@ -1,0 +1,1072 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>東中學生圖像創作小助手</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.7.77/Tone.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&family=Noto+Sans+TC:wght@400;700&display=swap');
+        
+        body {
+            font-family: 'Inter', 'Noto Sans TC', sans-serif;
+            background: linear-gradient(to bottom right, #1f2937, #111827);
+        }
+        .main-content {
+            transition: opacity 0.5s ease-in-out;
+        }
+        .hidden-section {
+            display: none;
+            opacity: 0;
+        }
+        .visible-section {
+            display: block;
+            opacity: 1;
+        }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.05);
+            -webkit-backdrop-filter: blur(12px);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+        }
+        .glass-card:hover {
+            transform: translateY(-6px);
+            background: rgba(255, 255, 255, 0.1);
+            box-shadow: 0 10px 25px -3px rgba(0, 0, 0, 0.2), 0 4px 6px -2px rgba(0, 0, 0, 0.1);
+        }
+        .icon-gradient {
+            background: linear-gradient(to right, #60a5fa, #c084fc);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .image-preview {
+            width: 128px;
+            height: 128px;
+            object-fit: cover;
+            border-radius: 0.5rem;
+            border: 2px dashed #4b5563; /* gray-600 */
+            background-color: #374151; /* gray-700 */
+        }
+        .result-container {
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #1f2937; /* gray-800 */
+            border-radius: 0.5rem;
+            min-height: 256px;
+            padding: 1rem;
+            border: 1px solid #374151; /* gray-700 */
+        }
+        /* Dark mode form styles */
+        .form-input {
+            background-color: #374151; /* gray-700 */
+            border: 1px solid #4b5563; /* gray-600 */
+            color: #f3f4f6; /* gray-100 */
+            border-radius: 0.375rem;
+        }
+        .form-input:focus {
+            ring: 2px;
+            ring-color: #3b82f6; /* blue-500 */
+            border-color: #3b82f6; /* blue-500 */
+        }
+        .file-input::file-selector-button {
+            background-color: #374151; /* gray-700 */
+            border: 1px solid #4b5563;
+            color: #d1d5db; /* gray-300 */
+            transition: background-color 0.2s;
+        }
+        .file-input::file-selector-button:hover {
+             background-color: #4b5563; /* gray-600 */
+        }
+        #game-canvas, #game-canvas-8 {
+            background-color: #111827;
+            cursor: crosshair;
+            border-radius: 0.5rem;
+        }
+        .upgrade-card {
+            background: rgba(49, 46, 129, 0.7);
+            border: 1px solid rgba(129, 140, 248, 0.5);
+            transition: all 0.2s ease-in-out;
+        }
+        .upgrade-card:hover {
+            background: rgba(67, 56, 202, 0.8);
+            transform: scale(1.05);
+        }
+    </style>
+</head>
+<body class="text-gray-200">
+
+    <div class="container mx-auto p-4 sm:p-6 md:p-8">
+        <header class="text-center mb-10">
+            <h1 class="text-4xl sm:text-5xl font-bold text-gray-100">東中學生圖像創作小助手</h1>
+            <p class="text-md text-gray-400 mt-3">點擊下方功能，開始你的 AI 圖像創作或玩場遊戲吧！</p>
+        </header>
+
+        <!-- 主選單 -->
+        <main id="main-menu" class="main-content grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            <!-- 功能按鈕 -->
+            <button onclick="showSection('section-1')" class="glass-card text-white p-6 rounded-2xl text-left"><i class="fas fa-user-edit text-4xl mb-4 icon-gradient"></i><h2 class="text-xl font-bold">角色情境重繪</h2><p class="mt-1 text-gray-400">上傳角色圖片，輸入新場景或動作，AI 將生成保持角色特徵的新圖像。</p></button>
+            <button onclick="showSection('section-2')" class="glass-card text-white p-6 rounded-2xl text-left"><i class="fas fa-magic-wand-sparkles text-4xl mb-4 icon-gradient"></i><h2 class="text-xl font-bold">圖像局部修改</h2><p class="mt-1 text-gray-400">上傳圖片，下達編輯指令，例如「把背景換成星空」，AI 將為您修改圖像。</p></button>
+            <button onclick="showSection('section-3')" class="glass-card text-white p-6 rounded-2xl text-left"><i class="fas fa-layer-group text-4xl mb-4 icon-gradient"></i><h2 class="text-xl font-bold">風格元素融合</h2><p class="mt-1 text-gray-400">上傳兩張圖（內容與風格），AI 會將兩者特點結合，創造全新藝術作品。</p></button>
+            <button onclick="showSection('section-4')" class="glass-card text-white p-6 rounded-2xl text-left"><i class="fas fa-award text-4xl mb-4 icon-gradient"></i><h2 class="text-xl font-bold">AI 智慧排版</h2><p class="mt-1 text-gray-400">快速生成獎狀、證書或卡片。上傳模板、照片並輸入文字，AI 自動完成排版。</p></button>
+            <button onclick="showSection('section-5')" class="glass-card text-white p-6 rounded-2xl text-left"><i class="fas fa-lightbulb text-4xl mb-4 icon-gradient"></i><h2 class="text-xl font-bold">作業靈感幫手</h2><p class="mt-1 text-gray-400">拍下數學題或作文草稿，提出問題，AI 會提供圖文並茂的解答或創作建議。</p></button>
+            <button onclick="showSection('section-6')" class="glass-card text-white p-6 rounded-2xl text-left"><i class="fas fa-grin-stars text-4xl mb-4 icon-gradient"></i><h2 class="text-xl font-bold">風格化角色貼圖</h2><p class="mt-1 text-gray-400">上傳角色或用文字描述，選擇情緒與風格，AI 為您生成一系列可愛貼圖。</p></button>
+            <button onclick="showSection('section-7')" class="glass-card text-white p-6 rounded-2xl text-left"><i class="fas fa-gamepad text-4xl mb-4 icon-gradient"></i><h2 class="text-xl font-bold">3D 迷宮射擊</h2><p class="mt-1 text-gray-400">在迷宮中移動並擊敗所有敵人！W/A/S/D 移動，滑鼠瞄準射擊。</p></button>
+            <button onclick="showSection('section-8')" class="glass-card text-white p-6 rounded-2xl text-left"><i class="fas fa-meteor text-4xl mb-4 icon-gradient"></i><h2 class="text-xl font-bold">魔物倖存者</h2><p class="mt-1 text-gray-400">操作角色躲避無盡的敵人，自動攻擊並升級，挑戰你的生存極限！</p></button>
+        </main>
+
+        <!-- 各功能區塊 -->
+        <div id="sections-container" class="main-content">
+            <!-- 內容會由 JS 動態填入 -->
+        </div>
+    </div>
+
+    <!-- Modal for notifications -->
+    <div id="notification-modal" class="fixed inset-0 bg-black bg-opacity-70 z-50 hidden items-center justify-center p-4">
+        <div class="bg-gray-800 border border-gray-700 rounded-lg shadow-xl p-6 w-11/12 md:w-1/3 text-center">
+            <p id="modal-message" class="text-lg text-gray-200"></p>
+            <button onclick="hideModal()" class="mt-6 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-lg">關閉</button>
+        </div>
+    </div>
+
+    <script>
+        const mainMenu = document.getElementById('main-menu');
+        const sectionsContainer = document.getElementById('sections-container');
+        const modal = document.getElementById('notification-modal');
+        const modalMessage = document.getElementById('modal-message');
+        
+        // --- 核心 API 呼叫邏輯 ---
+        const apiKey = ""; // 由環境自動提供金鑰
+
+        /**
+         * 將檔案物件轉換為 Base64 字串
+         */
+        function fileToBase64(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+                reader.onload = () => resolve(reader.result.split(',')[1]);
+                reader.onerror = error => reject(error);
+            });
+        }
+
+        /**
+         * 呼叫 AI 圖像生成 API
+         */
+        async function callImageAPI(parts, button, sId) {
+            const loader = document.getElementById(`${sId}-loader`);
+            const placeholder = document.getElementById(`${sId}-placeholder`);
+            const resultsGrid = document.getElementById(`${sId}-results-grid`);
+            const resultImage1 = document.getElementById(`${sId}-result-image-1`);
+            const resultImage2 = document.getElementById(`${sId}-result-image-2`);
+            const downloadContainer = document.getElementById(`${sId}-download-container`);
+            const downloadLink1 = document.getElementById(`${sId}-download-link-1`);
+            const downloadLink2 = document.getElementById(`${sId}-download-link-2`);
+
+            button.disabled = true;
+            button.classList.add('opacity-50', 'cursor-not-allowed');
+            loader.classList.remove('hidden');
+            placeholder.classList.add('hidden');
+            resultsGrid.classList.add('hidden');
+            resultImage1.classList.add('hidden');
+            resultImage2.classList.add('hidden');
+            downloadContainer.classList.add('hidden');
+
+            try {
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
+                
+                const payload = {
+                    contents: [{ parts: parts }],
+                    generationConfig: { 
+                        responseModalities: ['IMAGE'],
+                        candidateCount: 2 
+                    },
+                };
+
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!response.ok) {
+                    const errorBody = await response.text();
+                    const customError = new Error(`API 請求失敗，狀態碼: ${response.status}`);
+                    customError.responseBody = errorBody; 
+                    throw customError;
+                }
+
+                const result = await response.json();
+                const candidates = result?.candidates;
+
+                if (!candidates || candidates.length === 0) {
+                    if (result.promptFeedback?.blockReason) {
+                         throw new Error(`圖片生成被中止，原因：${result.promptFeedback.blockReason}`);
+                    }
+                    throw new Error('API 回應無效，找不到任何候選結果。');
+                }
+
+                let generatedImageCount = 0;
+                const images = [resultImage1, resultImage2];
+                const links = [downloadLink1, downloadLink2];
+
+                for (let i = 0; i < candidates.length && i < 2; i++) {
+                    const candidate = candidates[i];
+                    
+                    if (candidate.finishReason && candidate.finishReason !== 'STOP') {
+                        console.warn(`候選圖片 ${i+1} 生成被中止，原因: ${candidate.finishReason}`);
+                        continue;
+                    }
+
+                    const imagePart = candidate.content?.parts?.find(p => p.inlineData);
+                    const base64Data = imagePart?.inlineData?.data;
+
+                    if (base64Data) {
+                        const imageUrl = `data:image/png;base64,${base64Data}`;
+                        images[i].src = imageUrl;
+                        images[i].classList.remove('hidden');
+                        links[i].href = imageUrl;
+                        generatedImageCount++;
+                    }
+                }
+                
+                if (generatedImageCount > 0) {
+                    resultsGrid.classList.remove('hidden');
+                    downloadContainer.classList.remove('hidden');
+                    if (generatedImageCount < 2) {
+                        downloadLink2.style.display = 'none';
+                    } else {
+                        downloadLink2.style.display = 'inline-block';
+                    }
+                } else {
+                    throw new Error('API 回應中找不到圖片資料，且未提供其他說明。');
+                }
+
+            } catch (error) {
+                console.error('圖像生成失敗:', error);
+                let errorMessage = '圖片生成失敗，請稍後再試。';
+                 if (error.responseBody) {
+                    try {
+                        const errorJson = JSON.parse(error.responseBody);
+                        errorMessage = errorJson.error?.message || errorMessage;
+                    } catch (e) { /* 忽略解析錯誤 */ }
+                } else {
+                    errorMessage = error.message;
+                }
+                placeholder.textContent = `錯誤：${errorMessage}`;
+                placeholder.classList.remove('hidden');
+                showModal(`發生錯誤：${errorMessage}`);
+            } finally {
+                loader.classList.add('hidden');
+                button.disabled = false;
+                button.classList.remove('opacity-50', 'cursor-not-allowed');
+            }
+        }
+        
+        // --- UI 顯示邏輯 ---
+        function showModal(message) {
+            modalMessage.textContent = message;
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        function hideModal() {
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+        
+        let activeGame = null;
+        function showSection(sectionId) {
+             // Stop any active game before switching
+            if (activeGame === 'fps' && game.animationFrameId) {
+                cancelAnimationFrame(game.animationFrameId);
+                game.animationFrameId = null;
+                document.exitPointerLock();
+            }
+            if (activeGame === 'survivor' && survivorGame.animationFrameId) {
+                cancelAnimationFrame(survivorGame.animationFrameId);
+                survivorGame.animationFrameId = null;
+            }
+            activeGame = null;
+
+            if (sectionId === 'section-7') {
+                 setTimeout(initializeGame, 100); 
+                 activeGame = 'fps';
+            } else if (sectionId === 'section-8') {
+                 setTimeout(initializeSurvivorGame, 100); 
+                 activeGame = 'survivor';
+            }
+
+            mainMenu.style.display = 'none';
+            const section = document.getElementById(sectionId);
+            section.classList.remove('hidden-section');
+            section.classList.add('visible-section');
+        }
+
+        function showMenu() {
+            const sections = sectionsContainer.querySelectorAll('section');
+            sections.forEach(section => {
+                section.classList.remove('visible-section');
+                section.classList.add('hidden-section');
+            });
+            mainMenu.style.display = 'grid';
+            
+            if (activeGame === 'fps' && game.animationFrameId) {
+                cancelAnimationFrame(game.animationFrameId);
+                game.animationFrameId = null;
+                document.exitPointerLock();
+            }
+             if (activeGame === 'survivor' && survivorGame.animationFrameId) {
+                cancelAnimationFrame(survivorGame.animationFrameId);
+                survivorGame.animationFrameId = null;
+            }
+            activeGame = null;
+        }
+
+        function previewImage(input, previewId) {
+            const preview = document.getElementById(previewId);
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = e => { preview.src = e.target.result; };
+                reader.readAsDataURL(input.files[0]);
+            } else {
+                preview.src = "https://placehold.co/128x128/374151/9ca3af?text=預覽";
+            }
+        }
+        
+        function toggleCustomTemplate(value) {
+            document.getElementById('s4-custom-template-upload').classList.toggle('hidden', value !== 'custom');
+        }
+        
+        function setScene(sId, clickedButton, sceneText) {
+            document.getElementById(`${sId}-prompt`).value = sceneText;
+            const allButtons = clickedButton.parentElement.querySelectorAll('.scene-btn');
+            allButtons.forEach(btn => {
+                btn.classList.remove('bg-blue-600');
+                btn.classList.add('bg-gray-600');
+            });
+            clickedButton.classList.remove('bg-gray-600');
+            clickedButton.classList.add('bg-blue-600');
+        }
+
+        function clearSceneSelection(sId) {
+            const buttonContainer = document.getElementById(`${sId}-prompt`).previousElementSibling;
+            const allButtons = buttonContainer.querySelectorAll('.scene-btn');
+            allButtons.forEach(btn => {
+                btn.classList.remove('bg-blue-600');
+                btn.classList.add('bg-gray-600');
+            });
+        }
+
+
+        // --- 功能生成器 ---
+        const sectionsData = [
+            { id: 1, color: 'blue', title: '角色情境重繪', desc: '上傳一張主要的角色圖片，然後輸入新的場景或動作描述。AI 將以此為基礎，生成一張保持了原角色特徵的新圖像。' },
+            { id: 2, color: 'green', title: '圖像局部修改', desc: '上傳任何一張圖片，並用文字下達編輯指令，例如「把背景換成星空」。AI 會理解指令並對圖像進行修改。' },
+            { id: 3, color: 'purple', title: '風格元素融合', desc: '上傳內容圖與風格圖，AI 會將兩者特點結合，創造全新藝術作品。' },
+            { id: 4, color: 'yellow', title: 'AI 智慧排版', desc: '選擇模板、上傳照片並輸入文字，AI 會自動完成排版。' },
+            { id: 5, color: 'red', title: '作業靈感幫手', desc: '拍下問題或草稿，讓 AI 提供圖文並茂的解答或創作建議。' },
+            { id: 6, color: 'indigo', title: '風格化角色貼圖', desc: '上傳角色或用文字描述，選擇情緒與風格，AI 為您生成一系列可愛貼圖。' },
+            { id: 7, color: 'pink', title: '3D 迷宮射擊', desc: '在迷宮中移動並擊敗所有敵人！W/A/S/D 移動，滑鼠瞄準射擊。' },
+            { id: 8, color: 'teal', title: '魔物倖存者', desc: '操作角色躲避無盡的敵人，自動攻擊並升級，挑戰你的生存極限！' },
+        ];
+        
+        function createSectionHTML(data) {
+            const sId = `s${data.id}`;
+            let inputsHTML = '';
+
+            // 根據不同功能產生對應的輸入介面
+            switch(data.id) {
+                case 1:
+                    const scenes = [
+                        '在沙灘上', '在森林裡', '城市夜景中', '圖書館看書', '在太空中', '變成超級英雄',
+                        '正在吃拉麵', '正在打籃球', '正在彈吉他', '騎著飛龍', '在咖啡廳喝咖啡', '正在畫畫'
+                    ];
+                    let sceneButtonsHTML = scenes.map(scene => 
+                        `<button type="button" onclick="setScene('${sId}', this, '${scene}')" class="scene-btn bg-gray-600 hover:bg-gray-500 text-white text-xs sm:text-sm py-2 px-3 rounded-full transition-colors">${scene}</button>`
+                    ).join('');
+
+                    inputsHTML = `
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <label class="block mb-2 font-semibold">步驟一：上傳角色圖片</label>
+                                <input type="file" id="${sId}-image" class="w-full text-sm text-gray-300 file-input file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold" accept="image/*" onchange="previewImage(this, '${sId}-preview')">
+                                <img id="${sId}-preview" class="mt-4 image-preview" src="https://placehold.co/128x128/374151/9ca3af?text=預覽">
+                            </div>
+                            <div>
+                                <label for="${sId}-prompt" class="block mb-2 font-semibold">步驟二：點選或輸入場景/動作</label>
+                                <div class="flex flex-wrap gap-2 mb-3">
+                                    ${sceneButtonsHTML}
+                                </div>
+                                <textarea id="${sId}-prompt" rows="3" class="w-full p-2 form-input" placeholder="點擊上方按鈕或在此輸入自訂內容..." oninput="clearSceneSelection('${sId}')"></textarea>
+                            </div>
+                        </div>`;
+                    break;
+                case 2:
+                    inputsHTML = `
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <label class="block mb-2 font-semibold">步驟一：上傳要修改的圖片</label>
+                                <input type="file" id="${sId}-image" class="w-full text-sm text-gray-300 file-input file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold" accept="image/*" onchange="previewImage(this, '${sId}-preview')">
+                                <img id="${sId}-preview" class="mt-4 image-preview" src="https://placehold.co/128x128/374151/9ca3af?text=預覽">
+                            </div>
+                            <div>
+                                <label for="${sId}-prompt" class="block mb-2 font-semibold">步驟二：輸入編輯指令</label>
+                                <textarea id="${sId}-prompt" rows="4" class="w-full p-2 form-input" placeholder="例如：把背景換成夜晚的星空"></textarea>
+                            </div>
+                        </div>`;
+                    break;
+                case 3:
+                     inputsHTML = `
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                            <div>
+                                <label class="block mb-2 font-semibold">步驟一：上傳內容/主體圖片</label>
+                                <input type="file" id="${sId}-image1" class="w-full text-sm text-gray-300 file-input file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold" accept="image/*" onchange="previewImage(this, '${sId}-preview1')">
+                                <img id="${sId}-preview1" class="mt-4 image-preview" src="https://placehold.co/128x128/374151/9ca3af?text=內容圖">
+                            </div>
+                            <div>
+                                <label class="block mb-2 font-semibold">步驟二：上傳風格/元素圖片</label>
+                                <input type="file" id="${sId}-image2" class="w-full text-sm text-gray-300 file-input file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold" accept="image/*" onchange="previewImage(this, '${sId}-preview2')">
+                                <img id="${sId}-preview2" class="mt-4 image-preview" src="https://placehold.co/128x128/374151/9ca3af?text=風格圖">
+                            </div>
+                        </div>
+                        <div>
+                            <label for="${sId}-prompt" class="block mb-2 font-semibold">步驟三：輸入融合指令 (可選)</label>
+                            <textarea id="${sId}-prompt" rows="3" class="w-full p-2 form-input" placeholder="例如：將第一張圖的城市景觀與第二張圖的梵谷風格融合 (若留白則使用預設指令)"></textarea>
+                        </div>`;
+                    break;
+                case 4:
+                     inputsHTML = `
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <label for="${sId}-template-type" class="block mb-2 font-semibold">步驟一：選擇模板類型</label>
+                                <select id="${sId}-template-type" class="w-full p-2 form-input" onchange="toggleCustomTemplate(this.value)">
+                                    <option>比賽獎狀</option><option>學生證</option><option>活動邀請卡</option><option value="custom">自訂模板</option>
+                                </select>
+                                <div id="s4-custom-template-upload" class="mt-4 hidden">
+                                    <label class="block mb-2 font-semibold text-sm">上傳自訂模板背景</label>
+                                    <input type="file" id="${sId}-image2" class="w-full text-sm text-gray-300 file-input file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold" accept="image/*" onchange="previewImage(this, '${sId}-preview2')">
+                                    <img id="${sId}-preview2" class="mt-4 image-preview" src="https://placehold.co/128x128/374151/9ca3af?text=模板背景">
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block mb-2 font-semibold">步驟二：上傳主要圖片</label>
+                                <input type="file" id="${sId}-image1" class="w-full text-sm text-gray-300 file-input file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold" accept="image/*" onchange="previewImage(this, '${sId}-preview1')">
+                                <img id="${sId}-preview1" class="mt-4 image-preview" src="https://placehold.co/128x128/374151/9ca3af?text=主要圖片">
+                            </div>
+                        </div>
+                        <div class="mt-6">
+                            <label for="${sId}-prompt" class="block mb-2 font-semibold">步驟三：輸入模板上的文字</label>
+                            <textarea id="${sId}-prompt" rows="4" class="w-full p-2 form-input" placeholder="一行一個項目，例如：&#10;姓名: 陳一豐&#10;獎項: AI創意比賽第一名&#10;日期: 20250928"></textarea>
+                        </div>`;
+                    break;
+                case 5:
+                    inputsHTML = `
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                             <div>
+                                <label class="block mb-2 font-semibold">步驟一：上傳問題或草稿圖片</label>
+                                <input type="file" id="${sId}-image" class="w-full text-sm text-gray-300 file-input file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold" accept="image/*" onchange="previewImage(this, '${sId}-preview')">
+                                <img id="${sId}-preview" class="mt-4 image-preview" src="https://placehold.co/128x128/374151/9ca3af?text=預覽">
+                            </div>
+                            <div>
+                                <label for="${sId}-prompt" class="block mb-2 font-semibold">步驟二：輸入你的請求</label>
+                                <textarea id="${sId}-prompt" rows="4" class="w-full p-2 form-input" placeholder="例如：請圖解這道題的解法&#10;或是：幫我把這個故事畫成四格漫畫"></textarea>
+                            </div>
+                        </div>`;
+                    break;
+                case 6:
+                    inputsHTML = `
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <label class="block mb-2 font-semibold">步驟一：上傳角色圖片 (可選)</label>
+                                <input type="file" id="${sId}-image" class="w-full text-sm text-gray-300 file-input file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold" accept="image/*" onchange="previewImage(this, '${sId}-preview')">
+                                <img id="${sId}-preview" class="mt-4 image-preview" src="https://placehold.co/128x128/374151/9ca3af?text=預覽">
+                            </div>
+                            <div>
+                                <label for="${sId}-prompt" class="block mb-2 font-semibold">或 直接輸入角色文字描述</label>
+                                <textarea id="${sId}-prompt" rows="4" class="w-full p-2 form-input" placeholder="例如：一個戴著紅色帽子的棕色短髮女孩"></textarea>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+                            <div>
+                                <label for="${sId}-keyword" class="block mb-2 font-semibold">步驟二：選擇情緒或動作</label>
+                                <select id="${sId}-keyword" class="w-full p-2 form-input"><option>開心大笑</option><option>哭泣</option><option>驚訝</option><option>生氣</option><option>OK</option><option>感謝</option><option>加油</option></select>
+                            </div>
+                            <div>
+                                <label for="${sId}-style" class="block mb-2 font-semibold">步驟三：選擇貼圖風格</label>
+                                <select id="${sId}-style" class="w-full p-2 form-input"><option value="">維持原圖風格</option><option value="動漫風格">動漫風格</option><option value="迪士尼風格">迪士尼風格</option><option value="像素風格">像素風格</option><option value="黏土風格">黏土風格</option></select>
+                            </div>
+                        </div>`;
+                    break;
+                case 7:
+                    return `
+                        <section id="section-7" class="glass-card p-4 sm:p-8 rounded-2xl relative">
+                             <h2 class="text-3xl font-bold mb-2">${data.title}</h2>
+                             <p class="mb-4 text-gray-400">${data.desc}</p>
+                             <div class="relative">
+                                 <canvas id="game-canvas"></canvas>
+                                 <div id="damage-flash" class="absolute inset-0 bg-red-500 bg-opacity-40 hidden pointer-events-none rounded-lg"></div>
+                                 <div id="game-start-container" class="absolute inset-0 bg-black bg-opacity-70 flex items-center justify-center flex-col text-white rounded-lg">
+                                    <h1 class="text-4xl font-bold">3D 迷宮射擊</h1>
+                                    <p class="mt-4 text-gray-300">W/A/S/D 移動 | 滑鼠 瞄準與射擊</p>
+                                    <button id="play-game-btn" class="mt-8 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg text-lg">開始遊戲</button>
+                                 </div>
+                                 <div id="game-over-container" class="absolute inset-0 bg-black bg-opacity-70 hidden items-center justify-center flex-col text-white rounded-lg">
+                                     <h1 class="text-5xl font-bold">分數: <span id="final-score-el">0</span></h1>
+                                     <p class="text-xl mt-2" id="win-lose-message">遊戲結束</p>
+                                     <button id="start-game-btn" class="mt-6 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg text-lg">重新開始</button>
+                                 </div>
+                             </div>
+                             <div class="mt-8 flex items-center justify-between">
+                                <button onclick="showMenu()" class="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-lg transition-colors">返回選單</button>
+                            </div>
+                        </section>`;
+                case 8:
+                     return `
+                        <section id="section-8" class="glass-card p-4 sm:p-8 rounded-2xl relative">
+                             <h2 class="text-3xl font-bold mb-2">${data.title}</h2>
+                             <p class="mb-4 text-gray-400">${data.desc}</p>
+                             <div class="relative">
+                                 <canvas id="game-canvas-8"></canvas>
+                                  <div id="survivor-damage-flash" class="absolute inset-0 bg-red-500 bg-opacity-40 hidden pointer-events-none rounded-lg"></div>
+                                  <div id="survivor-start-container" class="absolute inset-0 bg-black bg-opacity-70 flex items-center justify-center flex-col text-white rounded-lg">
+                                    <h1 class="text-4xl font-bold">魔物倖存者</h1>
+                                    <p class="mt-4 text-gray-300">W/A/S/D 移動 | 自動攻擊</p>
+                                    <button id="play-survivor-btn" class="mt-8 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg text-lg">開始生存</button>
+                                 </div>
+                                  <div id="survivor-level-up-container" class="absolute inset-0 bg-black bg-opacity-80 hidden items-center justify-center flex-col text-white rounded-lg">
+                                     <h2 class="text-4xl font-bold mb-8">等級提升！</h2>
+                                     <div id="upgrade-options-container" class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                         <!-- Upgrade options will be inserted here -->
+                                     </div>
+                                 </div>
+                                 <div id="survivor-game-over-container" class="absolute inset-0 bg-black bg-opacity-70 hidden items-center justify-center flex-col text-white rounded-lg">
+                                     <h1 class="text-5xl font-bold">生存時間: <span id="survivor-final-time-el">0</span>s</h1>
+                                     <p id="survivor-win-lose-message" class="text-xl mt-2">遊戲結束</p>
+                                     <button id="restart-survivor-btn" class="mt-6 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg text-lg">重新挑戰</button>
+                                 </div>
+                             </div>
+                             <div class="mt-8 flex items-center justify-between">
+                                <button onclick="showMenu()" class="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-lg transition-colors">返回選單</button>
+                            </div>
+                        </section>`;
+            }
+
+            return `
+                <section id="section-${data.id}" class="glass-card p-8 rounded-2xl">
+                    <h2 class="text-3xl font-bold mb-2">${data.title}</h2>
+                    <p class="mb-6 text-gray-400">${data.desc}</p>
+                    ${inputsHTML}
+                    <div class="mt-6">
+                        <h3 class="font-semibold mb-2 text-gray-300">生成結果：</h3>
+                        <div class="result-container">
+                            <div id="${sId}-loader" class="hidden text-center">
+                                <i class="fas fa-spinner fa-spin text-4xl text-gray-400"></i>
+                                <p class="mt-2 text-gray-400">圖片生成中，請稍候...</p>
+                            </div>
+                            <div id="${sId}-results-grid" class="hidden w-full grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <img id="${sId}-result-image-1" class="w-full h-auto rounded-lg hidden" alt="AI 生成的圖片 1">
+                                <img id="${sId}-result-image-2" class="w-full h-auto rounded-lg hidden" alt="AI 生成的圖片 2">
+                            </div>
+                            <p id="${sId}-placeholder" class="text-gray-500">點擊「產生圖片」後，結果將顯示於此</p>
+                        </div>
+                    </div>
+                    <div class="mt-8 flex items-center justify-between">
+                        <button onclick="showMenu()" class="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-lg transition-colors">返回選單</button>
+                        <div class="flex items-center gap-4">
+                            <div id="${sId}-download-container" class="hidden flex items-center gap-4">
+                                <a id="${sId}-download-link-1" href="#" download="ai_generated_image_1.png" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg transition-colors">下載圖 1</a>
+                                <a id="${sId}-download-link-2" href="#" download="ai_generated_image_2.png" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg transition-colors">下載圖 2</a>
+                            </div>
+                            <button onclick="runGenerator(${data.id}, this)" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg transition-colors">產生圖片</button>
+                        </div>
+                    </div>
+                </section>
+            `;
+        }
+
+        /**
+         * 根據功能 ID 執行對應的圖像生成邏輯
+         */
+        async function runGenerator(id, button) {
+            const sId = `s${id}`;
+            let parts = [];
+            let textPrompt = '';
+            
+            try {
+                // 根據 ID 組合不同的 API payload
+                switch(id) {
+                    case 1:
+                        textPrompt = document.getElementById(`${sId}-prompt`).value.trim();
+                        const file1 = document.getElementById(`${sId}-image`).files[0];
+                        if (!file1 || !textPrompt) { showModal('請上傳圖片並輸入場景描述！'); return; }
+                        parts.push({ text: `重新繪製上傳圖片中的角色，新場景是：「${textPrompt}」。請務必保持角色的外觀與風格一致。` });
+                        parts.push({ inlineData: { mimeType: file1.type, data: await fileToBase64(file1) }});
+                        break;
+                    case 2:
+                        textPrompt = document.getElementById(`${sId}-prompt`).value.trim();
+                        const file2 = document.getElementById(`${sId}-image`).files[0];
+                        if (!file2 || !textPrompt) { showModal('請上傳圖片並輸入編輯指令！'); return; }
+                        parts.push({ text: `根據以下指令，修改上傳的圖片：「${textPrompt}」。` });
+                        parts.push({ inlineData: { mimeType: file2.type, data: await fileToBase64(file2) }});
+                        break;
+                    case 3:
+                        textPrompt = document.getElementById(`${sId}-prompt`).value.trim() || '將第一張圖的內容與第二張圖的藝術風格融合。';
+                        const file3_1 = document.getElementById(`${sId}-image1`).files[0];
+                        const file3_2 = document.getElementById(`${sId}-image2`).files[0];
+                        if (!file3_1 || !file3_2) { showModal('請上傳內容與風格兩張圖片！'); return; }
+                        parts.push({ text: textPrompt });
+                        parts.push({ inlineData: { mimeType: file3_1.type, data: await fileToBase64(file3_1) }});
+                        parts.push({ inlineData: { mimeType: file3_2.type, data: await fileToBase64(file3_2) }});
+                        break;
+                    case 4:
+                        const templateType = document.getElementById(`${sId}-template-type`).value;
+                        textPrompt = document.getElementById(`${sId}-prompt`).value.trim();
+                        const file4_1 = document.getElementById(`${sId}-image1`).files[0]; // Main image
+                        if (!file4_1 || !textPrompt) { showModal('請上傳主要圖片並輸入文字！'); return; }
+                        
+                        let prompt4 = `生成一張新的「${templateType}」。圖片的主角要參照上傳的第一張圖的人物，並將以下文字內容清晰地呈現在這張「${templateType}」上：\n${textPrompt}。`;
+                        parts.push({ text: prompt4 });
+                        parts.push({ inlineData: { mimeType: file4_1.type, data: await fileToBase64(file4_1) }});
+
+                        if (templateType === 'custom') {
+                            const file4_2 = document.getElementById(`${sId}-image2`).files[0]; // Template image
+                            if (!file4_2) { showModal('請上傳自訂模板背景！'); return; }
+                            parts[0].text = `生成一張新的「${templateType}」。請使用上傳的第二張圖片作為背景設計，將第一張圖的人物與以下文字清晰地呈現在圖片上：\n${textPrompt}。`;
+                            parts.push({ inlineData: { mimeType: file4_2.type, data: await fileToBase64(file4_2) }});
+                        }
+                        break;
+                    case 5:
+                        textPrompt = document.getElementById(`${sId}-prompt`).value.trim();
+                        const file5 = document.getElementById(`${sId}-image`).files[0];
+                        if (!file5 || !textPrompt) { showModal('請上傳圖片並輸入你的請求！'); return; }
+                        parts.push({ text: `分析上傳的圖片內容，它是一個作業問題。我的請求是：「${textPrompt}」。請生成一張全新的、簡單的示意圖或插圖，用視覺化的方式來解答或說明我的請求。` });
+                        parts.push({ inlineData: { mimeType: file5.type, data: await fileToBase64(file5) }});
+                        break;
+                    case 6:
+                        const file6 = document.getElementById(`${sId}-image`).files[0];
+                        const textDesc6 = document.getElementById(`${sId}-prompt`).value.trim();
+                        if (!file6 && !textDesc6) { showModal('請至少上傳一張角色圖片或輸入文字描述！'); return; }
+
+                        const keyword6 = document.getElementById(`${sId}-keyword`).value;
+                        const style6 = document.getElementById(`${sId}-style`).value;
+                        let roleSourceCmd = file6 ? "請依據上傳圖片中的角色，" : `請依據以下描述：「${textDesc6}」，`;
+                        let additionalCmd = file6 ? "請務必保持原角色的外觀特徵一致。" : "";
+                        let finalPrompt6 = `${roleSourceCmd}為這個角色畫一張主題為「${keyword6}」的表情貼圖。風格是：${style6 ? style6 : '維持圖片原有風格'}。請用乾淨的白色背景。${additionalCmd}`;
+                        
+                        parts.push({ text: finalPrompt6 });
+                        if(file6) parts.push({ inlineData: { mimeType: file6.type, data: await fileToBase64(file6) }});
+                        break;
+                }
+                
+                // 呼叫 API
+                await callImageAPI(parts, button, sId);
+
+            } catch (error) {
+                console.error(`Generator ${id} 失敗:`, error);
+                showModal(`處理您的請求時發生錯誤: ${error.message}`);
+            }
+        }
+
+        // --- Raycasting Game Logic (Game 1) ---
+        const game = {
+            ctx: null, canvas: null, animationFrameId: null, audioInitialized: false, sounds: null,
+            player: { x: 2, y: 2, angle: 0, speed: 0.05, rotSpeed: 0.03, hp: 100 },
+            map: [
+                [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+                [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+                [1,0,1,1,0,0,0,1,0,1,0,0,0,1,0,1],
+                [1,0,1,0,0,0,0,1,0,0,0,0,0,1,0,1],
+                [1,0,1,0,0,2,0,1,1,1,1,0,0,1,0,1],
+                [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+                [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+                [1,0,1,0,0,0,0,0,0,0,2,0,0,1,0,1],
+                [1,0,1,1,1,1,0,1,1,1,1,0,0,1,0,1],
+                [1,0,0,0,0,0,0,1,0,0,0,0,0,1,0,1],
+                [1,0,0,2,0,0,0,0,0,0,0,0,0,0,0,1],
+                [1,0,1,1,0,0,1,0,0,1,0,0,0,1,0,1],
+                [1,0,1,0,0,0,1,0,0,1,0,0,0,1,0,1],
+                [1,0,1,0,0,0,1,0,0,1,0,0,0,1,0,1],
+                [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+                [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
+            ],
+            keys: {},
+            fov: Math.PI / 3,
+            isGameOver: false, score: 0,
+            ui: {},
+            sprites: [],
+            lastShotTime: 0,
+            shotCooldown: 300,
+            muzzleFlash: 0,
+            assets: {},
+            assetsLoaded: false
+        };
+
+        function loadAssets() {
+            // ... (3D game asset loading)
+        }
+        async function initializeGame() {
+            // ... (3D game initialization)
+        }
+        // ... (All other 3D game functions: resetGame, gameLoop, update, playerShoot, render, endGame)
+
+
+        // --- Survivor Game Logic (Game 2) ---
+        const survivorGame = {
+             ctx: null, canvas: null, animationFrameId: null, audioInitialized: false, sounds: null,
+             keys: {},
+             isGameOver: false,
+             paused: true,
+             player: {},
+             enemies: [],
+             projectiles: [],
+             xpOrbs: [],
+             gameTime: 0,
+             lastSpawnTime: 0,
+             ui: {},
+             bossSpawned: false,
+        };
+
+        function initializeSurvivorGame() {
+            survivorGame.canvas = document.getElementById('game-canvas-8');
+            if(!survivorGame.canvas) return;
+            survivorGame.ctx = survivorGame.canvas.getContext('2d');
+            const parent = survivorGame.canvas.parentElement;
+            survivorGame.canvas.width = parent.clientWidth;
+            survivorGame.canvas.height = Math.min(window.innerHeight * 0.7, 500);
+
+            survivorGame.ui = {
+                startContainer: document.getElementById('survivor-start-container'),
+                playBtn: document.getElementById('play-survivor-btn'),
+                levelUpContainer: document.getElementById('survivor-level-up-container'),
+                upgradeOptionsContainer: document.getElementById('upgrade-options-container'),
+                gameOverContainer: document.getElementById('survivor-game-over-container'),
+                finalTimeEl: document.getElementById('survivor-final-time-el'),
+                winLoseMessage: document.getElementById('survivor-win-lose-message'),
+                restartBtn: document.getElementById('restart-survivor-btn'),
+                damageFlash: document.getElementById('survivor-damage-flash')
+            };
+            
+            document.addEventListener('keydown', e => survivorGame.keys[e.key.toLowerCase()] = true);
+            document.addEventListener('keyup', e => survivorGame.keys[e.key.toLowerCase()] = false);
+
+            survivorGame.ui.playBtn.addEventListener('click', startSurvivorGame);
+            survivorGame.ui.restartBtn.addEventListener('click', startSurvivorGame);
+            
+            survivorGame.ui.startContainer.classList.remove('hidden');
+            survivorGame.ui.startContainer.classList.add('flex');
+        }
+
+        function setupSurvivorSounds() {
+            if (survivorGame.sounds) return;
+             survivorGame.sounds = {
+                hit: new Tone.Synth({ oscillator: { type: 'sine' }, envelope: { attack: 0.001, decay: 0.1, sustain: 0, release: 0.1 } }).toDestination(),
+                xp: new Tone.Synth({ oscillator: { type: 'square' }, envelope: { attack: 0.01, decay: 0.05, sustain: 0, release: 0.1 } }).toDestination(),
+                levelUp: new Tone.FatOscillator("Ab3", "sawtooth", 40).toDestination(),
+                playerHit: new Tone.NoiseSynth({ noise: { type: 'brown' }, envelope: { attack: 0.01, decay: 0.2, sustain: 0 } }).toDestination(),
+            };
+            survivorGame.sounds.hit.volume.value = -15;
+            survivorGame.sounds.xp.volume.value = -18;
+            survivorGame.sounds.playerHit.volume.value = -10;
+        }
+
+        function startSurvivorGame() {
+            if (!survivorGame.audioInitialized) {
+                Tone.start().then(setupSurvivorSounds);
+                survivorGame.audioInitialized = true;
+            }
+            survivorGame.ui.startContainer.classList.add('hidden');
+            survivorGame.ui.gameOverContainer.classList.add('hidden');
+            
+            resetSurvivorGame();
+
+            if (survivorGame.animationFrameId) cancelAnimationFrame(survivorGame.animationFrameId);
+            survivorGame.paused = false;
+            survivorGameLoop();
+        }
+        
+        function resetSurvivorGame() {
+            survivorGame.player = {
+                x: survivorGame.canvas.width / 2, y: survivorGame.canvas.height / 2,
+                radius: 15, speed: 4,
+                maxHp: 100, hp: 100,
+                xp: 0, level: 1, xpToNextLevel: 10,
+                fireRate: 750, lastFireTime: 0, projectileCount: 1,
+                invincibleTimer: 0
+            };
+            survivorGame.enemies = [];
+            survivorGame.projectiles = [];
+            survivorGame.xpOrbs = [];
+            survivorGame.gameTime = 0;
+            survivorGame.lastSpawnTime = 0;
+            survivorGame.isGameOver = false;
+            survivorGame.bossSpawned = false;
+        }
+
+        function survivorGameLoop(timestamp) {
+            if (survivorGame.isGameOver || survivorGame.paused) return;
+
+            survivorGame.animationFrameId = requestAnimationFrame(survivorGameLoop);
+            
+            updateSurvivorGame(timestamp);
+            renderSurvivorGame();
+        }
+
+        function showSurvivorDamageFlash() {
+            if (survivorGame.ui.damageFlash) {
+                survivorGame.ui.damageFlash.classList.remove('hidden');
+                setTimeout(() => survivorGame.ui.damageFlash.classList.add('hidden'), 100);
+            }
+        }
+
+        function updateSurvivorGame(timestamp) {
+            survivorGame.gameTime += 1/60; // Approximate
+            
+            if (Math.floor(survivorGame.gameTime) === 60 && !survivorGame.bossSpawned) {
+                spawnBoss();
+                survivorGame.bossSpawned = true;
+            }
+
+            // Player movement
+            if (survivorGame.keys['w']) survivorGame.player.y -= survivorGame.player.speed;
+            if (survivorGame.keys['s']) survivorGame.player.y += survivorGame.player.speed;
+            if (survivorGame.keys['a']) survivorGame.player.x -= survivorGame.player.speed;
+            if (survivorGame.keys['d']) survivorGame.player.x += survivorGame.player.speed;
+
+            // Clamp player position
+            survivorGame.player.x = Math.max(0, Math.min(survivorGame.canvas.width, survivorGame.player.x));
+            survivorGame.player.y = Math.max(0, Math.min(survivorGame.canvas.height, survivorGame.player.y));
+            
+            if (survivorGame.player.invincibleTimer > 0) survivorGame.player.invincibleTimer--;
+
+            // Enemy spawning (stop regular spawns after boss)
+            const spawnInterval = Math.max(200, 1500 - survivorGame.gameTime * 10);
+            if (!survivorGame.bossSpawned && timestamp - survivorGame.lastSpawnTime > spawnInterval) {
+                survivorGame.lastSpawnTime = timestamp;
+                spawnEnemy();
+            }
+
+            // Automatic shooting
+            if (timestamp - survivorGame.player.lastFireTime > survivorGame.player.fireRate && survivorGame.enemies.length > 0) {
+                 survivorGame.player.lastFireTime = timestamp;
+                 playerShootSurvivor();
+            }
+
+            // Update entities
+            updateProjectiles();
+            updateEnemies();
+            updateXpOrbs();
+        }
+
+        function renderSurvivorGame() {
+             const { ctx, canvas, player, enemies, projectiles, xpOrbs } = survivorGame;
+             ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+             // Draw player
+             ctx.fillStyle = player.invincibleTimer > 0 ? 'rgba(0, 150, 255, 0.5)' : 'rgb(0, 150, 255)';
+             ctx.beginPath();
+             ctx.arc(player.x, player.y, player.radius, 0, Math.PI * 2);
+             ctx.fill();
+
+             // Draw entities
+             projectiles.forEach(p => { ctx.fillStyle = '#99ff99'; ctx.beginPath(); ctx.arc(p.x, p.y, p.radius, 0, Math.PI*2); ctx.fill(); });
+             enemies.forEach(e => { 
+                ctx.fillStyle = e.isBoss ? '#8b0000' : '#ff6666'; 
+                ctx.beginPath(); 
+                ctx.arc(e.x, e.y, e.radius, 0, Math.PI*2); 
+                ctx.fill(); 
+
+                // Boss HP Bar
+                if (e.isBoss) {
+                    const barWidth = e.radius * 2;
+                    const barX = e.x - e.radius;
+                    const barY = e.y - e.radius - 15;
+                    ctx.fillStyle = '#333';
+                    ctx.fillRect(barX, barY, barWidth, 10);
+                    ctx.fillStyle = 'red';
+                    ctx.fillRect(barX, barY, (e.hp / e.maxHp) * barWidth, 10);
+                }
+             });
+             xpOrbs.forEach(o => { ctx.fillStyle = '#66ccff'; ctx.beginPath(); ctx.arc(o.x, o.y, o.radius, 0, Math.PI*2); ctx.fill(); });
+
+            // Draw UI
+            // HP Bar
+            ctx.fillStyle = '#333';
+            ctx.fillRect(10, 10, 200, 20);
+            ctx.fillStyle = 'red';
+            ctx.fillRect(10, 10, (player.hp / player.maxHp) * 200, 20);
+            // XP Bar
+            ctx.fillStyle = '#333';
+            ctx.fillRect(10, 35, 200, 15);
+            ctx.fillStyle = 'cyan';
+            ctx.fillRect(10, 35, (player.xp / player.xpToNextLevel) * 200, 15);
+            // Text
+            ctx.fillStyle = 'white';
+            ctx.font = '16px sans-serif';
+            ctx.fillText(`Level: ${player.level}`, canvas.width - 50, 25);
+            ctx.fillText(`Time: ${Math.floor(survivorGame.gameTime)}s`, canvas.width / 2, 25);
+        }
+        
+        function levelUpSurvivor() {
+             survivorGame.paused = true;
+             if(survivorGame.sounds && survivorGame.sounds.levelUp) survivorGame.sounds.levelUp.start().stop("+0.2");
+             survivorGame.ui.levelUpContainer.classList.remove('hidden');
+             survivorGame.ui.levelUpContainer.classList.add('flex');
+
+             const upgrades = [
+                 { name: '更多子彈', desc: '+1 投射物', action: () => survivorGame.player.projectileCount++ },
+                 { name: '更快射速', desc: '-10% 射擊冷卻', action: () => survivorGame.player.fireRate *= 0.9 },
+                 { name: '跑快一點', desc: '+10% 移動速度', action: () => survivorGame.player.speed *= 1.1 },
+                 { name: '緊急治療', desc: '回復 30% HP', action: () => survivorGame.player.hp = Math.min(survivorGame.player.maxHp, survivorGame.player.hp + survivorGame.player.maxHp * 0.3) },
+             ];
+             const chosenUpgrades = [...upgrades].sort(() => 0.5 - Math.random()).slice(0, 3);
+             
+             survivorGame.ui.upgradeOptionsContainer.innerHTML = '';
+             chosenUpgrades.forEach(upgrade => {
+                 const card = document.createElement('button');
+                 card.className = 'upgrade-card p-6 rounded-lg text-center cursor-pointer';
+                 card.innerHTML = `<h3 class="text-xl font-bold">${upgrade.name}</h3><p class="text-gray-300 mt-2">${upgrade.desc}</p>`;
+                 card.onclick = () => {
+                     upgrade.action();
+                     survivorGame.ui.levelUpContainer.classList.add('hidden');
+                     survivorGame.paused = false;
+                     survivorGameLoop();
+                 };
+                 survivorGame.ui.upgradeOptionsContainer.appendChild(card);
+             });
+        }
+        
+        function endGameSurvivor(isWin = false) {
+            survivorGame.isGameOver = true;
+            cancelAnimationFrame(survivorGame.animationFrameId);
+            survivorGame.ui.gameOverContainer.classList.remove('hidden');
+            survivorGame.ui.gameOverContainer.classList.add('flex');
+            survivorGame.ui.finalTimeEl.innerText = Math.floor(survivorGame.gameTime);
+            survivorGame.ui.winLoseMessage.innerText = isWin ? "勝利！" : "遊戲結束";
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            sectionsData.forEach(data => sectionsContainer.innerHTML += createSectionHTML(data));
+            showMenu();
+        });
+        
+        // --- Survivor Game Helpers ---
+        function spawnEnemy() {
+            const side = Math.floor(Math.random() * 4);
+            let x, y;
+            if (side === 0) { x = -20; y = Math.random() * survivorGame.canvas.height; }
+            else if (side === 1) { x = survivorGame.canvas.width + 20; y = Math.random() * survivorGame.canvas.height; }
+            else if (side === 2) { x = Math.random() * survivorGame.canvas.width; y = -20; }
+            else { x = Math.random() * survivorGame.canvas.width; y = survivorGame.canvas.height + 20; }
+            
+            const hp = 3 + Math.floor(survivorGame.gameTime / 15);
+            survivorGame.enemies.push({ x, y, radius: 12, speed: 1 + Math.random() * 0.5, hp });
+        }
+        
+        function spawnBoss() {
+            survivorGame.enemies = []; // Clear other enemies
+            if(survivorGame.sounds?.levelUp) survivorGame.sounds.levelUp.start().stop("+0.5");
+            survivorGame.enemies.push({
+                x: survivorGame.canvas.width / 2, y: -50,
+                radius: 40, speed: 1, hp: 150, maxHp: 150,
+                isBoss: true
+            });
+        }
+
+        function playerShootSurvivor() {
+            const { player, enemies } = survivorGame;
+            let closestEnemy = null;
+            let minDist = Infinity;
+            enemies.forEach(enemy => {
+                const dist = Math.hypot(enemy.x - player.x, enemy.y - player.y);
+                if (dist < minDist) {
+                    minDist = dist;
+                    closestEnemy = enemy;
+                }
+            });
+
+            if (closestEnemy) {
+                const angle = Math.atan2(closestEnemy.y - player.y, closestEnemy.x - player.x);
+                for (let i = 0; i < player.projectileCount; i++) {
+                    const spread = (i - (player.projectileCount - 1) / 2) * 0.2;
+                    survivorGame.projectiles.push({
+                        x: player.x, y: player.y, radius: 5,
+                        vx: Math.cos(angle + spread) * 10, // Increased speed
+                        vy: Math.sin(angle + spread) * 10  // Increased speed
+                    });
+                }
+            }
+        }
+        
+        function updateProjectiles() {
+            survivorGame.projectiles.forEach((p, pIndex) => {
+                p.x += p.vx;
+                p.y += p.vy;
+                if (p.x < -10 || p.x > survivorGame.canvas.width + 10 || p.y < -10 || p.y > survivorGame.canvas.height + 10) {
+                    survivorGame.projectiles.splice(pIndex, 1);
+                }
+            });
+        }
+        
+        function updateEnemies() {
+             survivorGame.enemies.forEach((e, eIndex) => {
+                const angle = Math.atan2(survivorGame.player.y - e.y, survivorGame.player.x - e.x);
+                e.x += Math.cos(angle) * e.speed;
+                e.y += Math.sin(angle) * e.speed;
+
+                // Collision with projectiles
+                survivorGame.projectiles.forEach((p, pIndex) => {
+                    if (Math.hypot(p.x - e.x, p.y - e.y) < e.radius + p.radius) {
+                        survivorGame.projectiles.splice(pIndex, 1);
+                        e.hp--;
+                        if(survivorGame.sounds?.hit) survivorGame.sounds.hit.triggerAttackRelease("C2", "16n");
+                        if (e.hp <= 0) {
+                            if (e.isBoss) {
+                                for(let i = 0; i < 20; i++) {
+                                    survivorGame.xpOrbs.push({ x: e.x + (Math.random() - 0.5) * 50, y: e.y + (Math.random() - 0.5) * 50, radius: 8, value: 5 });
+                                }
+                                endGameSurvivor(true);
+                            } else {
+                                survivorGame.xpOrbs.push({ x: e.x, y: e.y, radius: 6, value: 1 });
+                            }
+                             survivorGame.enemies.splice(eIndex, 1);
+                        }
+                    }
+                });
+                
+                // Collision with player
+                if (survivorGame.player.invincibleTimer <= 0 && Math.hypot(survivorGame.player.x - e.x, survivorGame.player.y - e.y) < survivorGame.player.radius + e.radius) {
+                    survivorGame.player.hp -= 10;
+                    survivorGame.player.invincibleTimer = 60; // 1 sec invincibility
+                    if(survivorGame.sounds?.playerHit) survivorGame.sounds.playerHit.triggerAttackRelease("8n");
+                     showSurvivorDamageFlash();
+                    if (survivorGame.player.hp <= 0) endGameSurvivor();
+                }
+            });
+        }
+        
+        function updateXpOrbs() {
+             survivorGame.xpOrbs.forEach((orb, index) => {
+                if (Math.hypot(survivorGame.player.x - orb.x, survivorGame.player.y - orb.y) < survivorGame.player.radius + orb.radius + 30) {
+                    survivorGame.player.xp += orb.value;
+                    survivorGame.xpOrbs.splice(index, 1);
+                    if(survivorGame.sounds?.xp) survivorGame.sounds.xp.triggerAttackRelease("C5", "32n");
+                    
+                    if (survivorGame.player.xp >= survivorGame.player.xpToNextLevel) {
+                        survivorGame.player.level++;
+                        survivorGame.player.xp -= survivorGame.player.xpToNextLevel;
+                        survivorGame.player.xpToNextLevel = Math.floor(survivorGame.player.xpToNextLevel * 1.5);
+                        levelUpSurvivor();
+                    }
+                }
+            });
+        }
+
+    </script>
+</body>
+</html>
+
